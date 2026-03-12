@@ -8,9 +8,10 @@ const props = defineProps({
   userName: { type: String, required: true },
   userHandle: { type: String, required: true },
   userInitials: { type: String, required: true },
+  userAvatarUrl: { type: String, default: '' },
 })
 
-const emit = defineEmits(['close', 'editProfile'])
+const emit = defineEmits(['close', 'editProfile', 'selectAction'])
 
 const items = computed(() => [
   { key: 'upgrade', label: 'Upgrade Plan', icon: Sparkles },
@@ -43,7 +44,14 @@ const items = computed(() => [
         class="mb-1 flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-[#eeeeee]"
         @click="emit('editProfile')"
       >
+        <img
+          v-if="props.userAvatarUrl"
+          :src="props.userAvatarUrl"
+          alt="User avatar"
+          class="h-9 w-9 shrink-0 rounded-full object-cover"
+        />
         <div
+          v-else
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white"
           aria-hidden="true"
         >
@@ -63,7 +71,7 @@ const items = computed(() => [
         type="button"
         class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-[#eeeeee] hover:text-zinc-900"
         role="menuitem"
-        @click="emit('close')"
+        @click="emit('selectAction', item.key)"
       >
         <component :is="item.icon" class="h-4 w-4 text-zinc-500" />
         <span class="truncate">{{ item.label }}</span>

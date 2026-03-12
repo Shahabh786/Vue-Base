@@ -18,6 +18,23 @@ function getDbConfig() {
 }
 
 const cfg = getDbConfig()
+const createUsersTableSql =
+  'CREATE TABLE IF NOT EXISTS `users` (' +
+  '`user_id` int AUTO_INCREMENT primary key,' +
+  '`full_name` varchar(150) DEFAULT NULL,' +
+  '`login_name` varchar(150) DEFAULT NULL,' +
+  '`email` varchar(150) DEFAULT NULL,' +
+  '`mobile_number` varchar(10) DEFAULT NULL,' +
+  '`password` varchar(45) DEFAULT NULL,' +
+  '`password_hash` varchar(255) DEFAULT NULL,' +
+  '`password_salt` varchar(255) DEFAULT NULL,' +
+  '`role` varchar(45) DEFAULT NULL,' +
+  '`profile photo` varchar(500) DEFAULT NULL,' +
+  '`created_by` int DEFAULT NULL,' +
+  '`created_on` timestamp NULL DEFAULT CURRENT_TIMESTAMP,' +
+  '`modified_by` int DEFAULT NULL,' +
+  '`modified_on` timestamp NULL DEFAULT NULL' +
+  ')'
 
 export const dbConfigError = cfg.ok ? null : cfg.error
 export const dbPool = cfg.ok
@@ -31,4 +48,10 @@ export const dbPool = cfg.ok
       queueLimit: 0,
     })
   : null
+
+export async function ensureUsersTableExists() {
+  if (!dbPool) return false
+  await dbPool.query(createUsersTableSql)
+  return true
+}
 

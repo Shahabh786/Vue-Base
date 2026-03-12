@@ -1,5 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '../composables/useAuth'
+import { resolveUserAvatarUrl } from '../lib/media'
 import EditProfileModal from './EditProfileModal.vue'
 import UserPopover from './UserPopover.vue'
 
@@ -10,9 +13,25 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:userMenuOpen'])
-const currentUserName = ref(props.userName)
-const currentUserHandle = ref('@shahab.haidar')
+const router = useRouter()
+const { clearSession, updateUser, user } = useAuth()
 const isEditProfileOpen = ref(false)
+
+const currentUserName = computed(
+  () => user.value?.fullName || user.value?.loginName || props.userName || 'User',
+)
+const currentUserHandle = computed(() => {
+  const loginName = String(user.value?.loginName ?? '').trim()
+  return loginName ? `@${loginName}` : '@user'
+})
+const currentUserAvatarUrl = computed(() => resolveUserAvatarUrl(user.value?.profilePhoto))
+const modalUser = computed(() => ({
+  fullName: currentUserName.value,
+  loginName: String(user.value?.loginName ?? '').trim(),
+  email: String(user.value?.email ?? '').trim(),
+  mobileNumber: String(user.value?.mobileNumber ?? '').trim(),
+  profilePhoto: String(user.value?.profilePhoto ?? '').trim(),
+}))
 
 const initials = computed(() => {
   const parts = String(currentUserName.value).trim().split(/\s+/).filter(Boolean)
@@ -34,10 +53,19 @@ function onEditProfile() {
   isEditProfileOpen.value = true
 }
 
-function onSaveProfile({ name, handle }) {
-  currentUserName.value = name
-  currentUserHandle.value = handle
+function onSaveProfile(nextUser) {
+  updateUser(nextUser)
   isEditProfileOpen.value = false
+}
+
+async function onPopoverAction(actionKey) {
+  if (actionKey === 'logout') {
+    clearSession()
+    closeMenu()
+    await router.replace('/login')
+    return
+  }
+  closeMenu()
 }
 </script>
 
@@ -49,14 +77,15 @@ function onSaveProfile({ name, handle }) {
       :user-name="currentUserName"
       :user-handle="currentUserHandle"
       :user-initials="initials"
+      :user-avatar-url="currentUserAvatarUrl"
       @close="closeMenu"
       @edit-profile="onEditProfile"
+      @select-action="onPopoverAction"
     />
 
     <EditProfileModal
       :open="isEditProfileOpen"
-      :user-name="currentUserName"
-      :user-handle="currentUserHandle"
+      :user="modalUser"
       @close="isEditProfileOpen = false"
       @save="onSaveProfile"
     />
@@ -67,7 +96,14 @@ function onSaveProfile({ name, handle }) {
       :class="props.expanded ? 'gap-3 px-2 py-2' : 'justify-center px-0 py-2'"
       @click="toggleMenu"
     >
+      <img
+        v-if="currentUserAvatarUrl"
+        :src="currentUserAvatarUrl"
+        alt="User avatar"
+        class="h-9 w-9 rounded-full object-cover"
+      />
       <div
+        v-else
         class="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white"
         aria-hidden="true"
       >
